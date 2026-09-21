@@ -1,9 +1,11 @@
+import { useState } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
 export default function Navbar() {
   const { isAuthed, logout } = useAuth();
   const navigate = useNavigate();
+  const [menuOpen, setMenuOpen] = useState(false);
 
   return (
     <header className="navbar">
@@ -13,7 +15,18 @@ export default function Navbar() {
           <strong>Ahsan&rsquo;s Cattle Farm</strong>
         </NavLink>
 
-        <nav className="navbar-links">
+        <button
+          type="button"
+          className="navbar-toggle"
+          aria-label={menuOpen ? 'Close menu' : 'Open menu'}
+          aria-expanded={menuOpen}
+          onClick={() => setMenuOpen((o) => !o)}
+        >
+          {menuOpen ? '✕' : '☰'}
+        </button>
+
+        {/* Clicking any link inside closes the mobile menu */}
+        <nav className={`navbar-links ${menuOpen ? 'open' : ''}`} onClick={() => setMenuOpen(false)}>
           <NavLink to="/about">About</NavLink>
           <NavLink to="/animals/cattle">Cattle</NavLink>
           <NavLink to="/animals/dairy">Dairy</NavLink>
@@ -25,7 +38,7 @@ export default function Navbar() {
           <NavLink to="/contact">Contact</NavLink>
           {isAuthed ? (
             <>
-              <NavLink to="/admin">Admin</NavLink>
+              <NavLink to="/admin" end>Admin</NavLink>
               <button
                 onClick={() => {
                   logout();

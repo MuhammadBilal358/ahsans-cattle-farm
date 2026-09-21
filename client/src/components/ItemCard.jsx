@@ -12,7 +12,7 @@ export default function ItemCard({ item, onClick }) {
             position: 'absolute', top: 10, right: 10, background: 'var(--maroon)', color: '#fff',
             fontSize: 11, fontWeight: 700, padding: '3px 10px', borderRadius: 999
           }}>
-            SOLD
+            {['cattle', 'dairy', 'goats'].includes(item.category) ? 'SOLD' : 'OUT OF STOCK'}
           </span>
         )}
       </div>

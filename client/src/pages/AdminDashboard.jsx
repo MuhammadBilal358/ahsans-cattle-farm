@@ -44,6 +44,7 @@ export default function AdminDashboard() {
 
   function loadItems() {
     setLoading(true);
+    setError('');
     api
       .get('/api/animals', { params: { category: activeCategory } })
       .then((res) => setItems(res.data))
@@ -137,7 +138,7 @@ export default function AdminDashboard() {
     try {
       await api.delete(`/api/animals/${item._id}`);
       loadItems();
-    } catch (err) {
+    } catch {
       setError('Could not delete this listing.');
     }
   }
@@ -353,7 +354,7 @@ export default function AdminDashboard() {
                               onChange={(e) => setForm({ ...form, available: e.target.checked })}
                               style={{ width: 'auto', marginRight: 8 }}
                             />
-                            Available / show on site
+                            Available (untick to mark as Sold / out of stock)
                           </label>
                         </div>
                       </div>

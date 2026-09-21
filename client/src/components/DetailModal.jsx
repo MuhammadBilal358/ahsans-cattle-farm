@@ -1,4 +1,14 @@
+import { useEffect } from 'react';
+
 export default function DetailModal({ item, allItems, onSelect, onClose }) {
+  // Close with the Escape key
+  useEffect(() => {
+    if (!item) return undefined;
+    const onKey = (e) => e.key === 'Escape' && onClose();
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [item, onClose]);
+
   if (!item) return null;
 
   const related = allItems.filter((i) => i._id !== item._id).slice(0, 6);

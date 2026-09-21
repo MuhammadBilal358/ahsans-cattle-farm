@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { Link, useParams } from 'react-router-dom';
 import api from '../api/axios';
 import ItemCard from '../components/ItemCard';
 import DetailModal from '../components/DetailModal';
@@ -40,10 +40,16 @@ export default function CategoryPage() {
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('all'); // all | available | sold
 
-  const meta = META[category] || { title: 'Not Found', intro: '' };
+  const meta = META[category];
   const isLivestock = ['cattle', 'dairy', 'goats'].includes(category);
 
   useEffect(() => {
+    // Unknown category in the URL (e.g. /animals/xyz) — don't call the API at all
+    if (!META[category]) {
+      setItems([]);
+      setLoading(false);
+      return;
+    }
     setLoading(true);
     setError('');
     setActive(null);
@@ -65,6 +71,17 @@ export default function CategoryPage() {
     return true;
   });
 
+  if (!meta) {
+    return (
+      <div className="container" style={{ padding: '60px 0' }}>
+        <h2>Page not found</h2>
+        <p style={{ marginTop: 10 }}>
+          That category doesn&rsquo;t exist. <Link to="/">Go back to the home page</Link>.
+        </p>
+      </div>
+    );
+  }
+
   return (
     <>
       <section className="page-hero" style={{ padding: '44px 0' }}>
@@ -83,8 +100,8 @@ export default function CategoryPage() {
 
           {!loading && !error && items.length === 0 && (
             <div className="empty-state">
-              Nothing listed here yet. {' '}
-              <a href="/admin/login">Log in to the admin dashboard</a> to add the first item.
+              Nothing listed here right now. Please <Link to="/contact">contact us</Link> or call
+              0307-3777444 to ask about current stock.
             </div>
           )}
 

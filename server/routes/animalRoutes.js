@@ -6,6 +6,29 @@ const router = express.Router();
 
 const VALID_CATEGORIES = ['cattle', 'dairy', 'goats', 'feed', 'milk', 'services'];
 
+// Only these fields can be set from the Admin Dashboard
+const EDITABLE_FIELDS = [
+  'title', 'category', 'tag', 'description', 'image', 'icon', 'specs', 'origin',
+  'available', 'order', 'tagNumber', 'ageLabel', 'weightKg', 'price'
+];
+function pickEditable(body) {
+  const out = {};
+  for (const key of EDITABLE_FIELDS) if (body[key] !== undefined) out[key] = body[key];
+  return out;
+}
+
+// Turn Mongoose errors into friendly 400 responses instead of generic 500s
+function sendDbError(res, err, fallback) {
+  if (err.name === 'ValidationError') {
+    const msg = Object.values(err.errors).map((e) => e.message).join(' ');
+    return res.status(400).json({ message: msg || 'Some fields are invalid.' });
+  }
+  if (err.name === 'CastError') {
+    return res.status(400).json({ message: `Invalid value for "${err.path}".` });
+  }
+  return res.status(500).json({ message: fallback });
+}
+
 // GET /api/animals?category=goats  (category optional — omit to get everything)
 router.get('/', async (req, res) => {
   try {
@@ -45,10 +68,10 @@ router.post('/', requireAdmin, async (req, res) => {
     if (!VALID_CATEGORIES.includes(category)) {
       return res.status(400).json({ message: `Unknown category "${category}".` });
     }
-    const animal = await Animal.create(req.body);
+    const animal = await Animal.create(pickEditable(req.body));
     res.status(201).json(animal);
   } catch (err) {
-    res.status(500).json({ message: 'Server error while creating the listing.' });
+    sendDbError(res, err, 'Server error while creating the listing.');
   }
 });
 
@@ -58,14 +81,14 @@ router.put('/:id', requireAdmin, async (req, res) => {
     if (req.body.category && !VALID_CATEGORIES.includes(req.body.category)) {
       return res.status(400).json({ message: `Unknown category "${req.body.category}".` });
     }
-    const animal = await Animal.findByIdAndUpdate(req.params.id, req.body, {
+    const animal = await Animal.findByIdAndUpdate(req.params.id, pickEditable(req.body), {
       new: true,
       runValidators: true
     });
     if (!animal) return res.status(404).json({ message: 'Not found.' });
     res.json(animal);
   } catch (err) {
-    res.status(500).json({ message: 'Server error while updating the listing.' });
+    sendDbError(res, err, 'Server error while updating the listing.');
   }
 });
 
@@ -76,7 +99,7 @@ router.delete('/:id', requireAdmin, async (req, res) => {
     if (!animal) return res.status(404).json({ message: 'Not found.' });
     res.json({ message: 'Deleted.' });
   } catch (err) {
-    res.status(500).json({ message: 'Server error while deleting the listing.' });
+    sendDbError(res, err, 'Server error while deleting the listing.');
   }
 });
 

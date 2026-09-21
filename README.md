@@ -45,6 +45,9 @@ Open `.env` and fill in:
 - `MONGO_URI` — the connection string from step 1
 - `JWT_SECRET` — any long random string (mash your keyboard)
 - `ADMIN_USERNAME` / `ADMIN_PASSWORD` — the login you'll use for the Admin Dashboard
+- `CLOUDINARY_CLOUD_NAME` / `CLOUDINARY_API_KEY` / `CLOUDINARY_API_SECRET` — from your free
+  Cloudinary account (https://cloudinary.com) — needed for photo uploads
+- `CLIENT_URL` *(optional)* — your live website address, to restrict which sites may call the API
 
 Then load the starting content (same animals/breeds/feed/milk as the static site) and create your admin account:
 
@@ -52,7 +55,7 @@ Then load the starting content (same animals/breeds/feed/milk as the static site
 npm run seed
 ```
 
-You should see `Inserted 23 animals/products.` and `Created admin account "..."`.
+You should see `Animal seed check complete. Added 23 missing item(s).` and `Created admin account "..."`.
 
 Start the API:
 
@@ -81,11 +84,12 @@ Open the URL it prints (usually `http://localhost:5173`). The site should load w
 ## 4. Using the Admin Dashboard
 
 Once logged in (`/admin`):
-- Switch between **Qurbani Cattle / Dairy Animals / Goats / Feed & Fodder / Fresh Milk** tabs
+- Switch between **Qurbani Cattle / Dairy Animals / Goats & Sheep / Feed & Fodder / Dairy Products / Services** tabs
+- Open **Customer Messages** to read Contact-form inquiries, mark them Handled, or delete them
 - **+ Add Listing** to create a new animal, breed, or product
 - **Edit** any row to change its text, specs, or upload a real photo
 - **Delete** removes a listing (asks for confirmation first)
-- Uploaded photos are stored in `server/uploads/` and served automatically
+- Uploaded photos are stored on **Cloudinary** (so they survive server restarts/redeploys)
 
 Every change shows up on the public site immediately — no rebuild needed.
 
@@ -110,7 +114,8 @@ cd client && npm run dev
 - **`server/models/Animal.js`** — the shape of every listing: title, category (`cattle` / `dairy` / `goats` / `feed` / `milk`), description, image, icon, specs, origin, availability, display order.
 - **`server/routes/animalRoutes.js`** — the public API (`GET /api/animals?category=goats`) and the admin-only write routes (create/update/delete), protected by `middleware/auth.js`.
 - **`server/routes/authRoutes.js`** — admin login, returns a JWT token the client stores and sends with every admin request.
-- **`server/routes/uploadRoutes.js`** — handles photo uploads (JPG/PNG/WEBP, 5MB max) from the Admin Dashboard.
+- **`server/routes/uploadRoutes.js`** — handles photo uploads (JPG/PNG/WEBP, 5MB max) from the Admin Dashboard and stores them on Cloudinary.
+- **`server/routes/inquiryRoutes.js`** — the public Contact form (`POST /api/inquiries`, rate-limited) and admin-only inquiry management.
 - **`client/src/pages/CategoryPage.jsx`** — one page component that renders Cattle, Dairy, Goats, Feed, or Milk depending on the URL, fetching live data from the API.
 - **`client/src/pages/AdminDashboard.jsx`** — the whole admin UI: tabs, table, add/edit form with image upload and a spec-row editor.
 - **`client/src/components/DetailModal.jsx`** — clicking any listing opens a detail popup with a "You may also like" row of related items, same as the static site.
@@ -141,10 +146,11 @@ This only adds items that don't already exist, so it's safe to run more than onc
 
 ### Still to come (not built yet)
 
-The full vision also includes: About Us page, a photo/video Gallery, a Customer Reviews
-section, an Eid/Qurbani advance-booking flow with a weight calculator, a Contact inquiry
-form that saves to the database, FAQs, and a Blog. These are bigger pieces being built
-next — ask to continue whenever you're ready for the next phase.
+Already added since Phase 1: an **About Us** page, a photo **Gallery**, and a **Contact form**
+that saves messages to the database (visible under *Customer Messages* in the Admin Dashboard).
+
+Still planned: a Customer Reviews section, an Eid/Qurbani advance-booking flow with a weight
+calculator, video clips in the Gallery, FAQs, and a Blog.
 
 ## Adding real photos
 
@@ -158,6 +164,7 @@ This README covers running it on your own laptop for development. To put it on t
 internet so customers can visit it from anywhere, you'd typically:
 1. Deploy `server/` to a Node hosting service (e.g. Render, Railway, or a VPS) and point `MONGO_URI` at your Atlas cluster.
 2. Deploy `client/` (`npm run build` → the `dist/` folder) to a static host (e.g. Netlify, Vercel) or serve it from the same server.
-3. Update the client's API calls to point at your deployed server's URL instead of relying on the local dev proxy in `vite.config.js`.
+3. On the static host, set the environment variable `VITE_API_URL` to your deployed server's URL (e.g. `https://your-api.onrender.com`) before building — the client uses it instead of the local dev proxy. `client/public/_redirects` already makes page refreshes work on Netlify.
+4. On the server host, set `CLIENT_URL` to your live site's address.
 
 That's a separate step from this local setup — ask if you'd like help with it once you're ready to go live.
